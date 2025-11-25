@@ -1,0 +1,173 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lowercase Converter</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:slnt,wght@-10..0,100..900&family=Geist:wght@100..900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg: light-dark(#fafafa,#1b1b1d);
+    --fg: light-dark(#0d0d10,#f2f2f7);
+    --muted: light-dark(#6b7280,#a1a1aa);
+    --card: light-dark(#ffffff,#1b1b1d);
+    --border: light-dark(#e5e7eb,#37373c);
+    --ring: #ff0062;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 32px rgb(0 0 0 / 0.10);
+    --space: clamp(.75rem, 1vw + .25rem, 1.25rem);
+    --fs: clamp(15px, .6vw + 12px, 18px);
+    --fs-lg: clamp(20px, 1.2vw + 14px, 28px);
+    --sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font: 400 var(--fs)/1.5 var(--sans);
+    background: var(--bg);
+    color: var(--fg);
+    display:grid;
+    place-items:center;
+    padding: 6vh 1rem;
+  }
+  .wrap{ width:min(720px, 100%); }
+  .card{
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: calc(var(--space) * 1.25);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space);
+  }
+  h1{
+    margin:0;
+    font-weight:650;
+    letter-spacing:.2px;
+    font-size: var(--fs-lg);
+    font-family: "Geist","Inter", var(--sans);
+  }
+  .header { display: flex; justify-content: space-between; align-items: baseline; }
+  p.hint{margin:0; color:var(--muted); font-size: .9em;}
+  
+  label{ display:block; margin-bottom:.35rem; font-size: .9em; font-weight: 500; color: var(--muted); }
+  
+  textarea {
+    width:100%;
+    min-height: 150px;
+    appearance:none;
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .85rem;
+    font: 400 .95rem/1.6 var(--mono);
+    resize: vertical;
+    transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  textarea::placeholder{color:var(--muted); opacity: 0.6;}
+  textarea:focus{
+    outline: none;
+    border-color: color-mix(in oklab, var(--ring) 60%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 14%, transparent);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  button {
+    appearance: none;
+    background: var(--fg);
+    color: var(--bg);
+    border: 0;
+    border-radius: 6px;
+    padding: .5rem 1rem;
+    font: 600 .85rem var(--sans);
+    cursor: pointer;
+    transition: transform .1s, opacity .2s, background-color .2s;
+  }
+  button:hover { opacity: 0.9; }
+  button:active { transform: scale(0.98); }
+  
+  /* State for copied success */
+  button.success {
+    background: color-mix(in oklab, #10b981, var(--fg) 10%);
+    color: white;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <div class="header">
+      <h1>Lowercase</h1>
+      <p class="hint">Instant conversion</p>
+    </div>
+
+    <div>
+      <label for="input">Input</label>
+      <textarea id="input" placeholder="Paste or type text here..."></textarea>
+    </div>
+
+    <div>
+      <label for="output">Output</label>
+      <textarea id="output" readonly placeholder="Lowercase text will appear here..."></textarea>
+    </div>
+    
+    <div class="actions">
+      <button id="copyBtn" type="button">Copy to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const input = document.getElementById('input');
+    const output = document.getElementById('output');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // Live conversion logic
+    function render() {
+      output.value = (input.value || '').toLowerCase();
+    }
+
+    input.addEventListener('input', render);
+    input.addEventListener('paste', () => { requestAnimationFrame(render); });
+    
+    // Clipboard logic with feedback
+    copyBtn.addEventListener('click', async () => {
+      if (!output.value) return;
+
+      try {
+        await navigator.clipboard.writeText(output.value);
+        
+        // Visual Feedback
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('success');
+        
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.classList.remove('success');
+        }, 2000);
+        
+      } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard.');
+      }
+    });
+
+    render();
+  })();
+</script>
