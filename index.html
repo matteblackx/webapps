@@ -1,311 +1,348 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Times Tables — Tap Practice</title>
-  <style>
-    :root {
-      --bg: #0f1115;
-      --fg: #e6e6e6;
-      --muted: #9aa3ad;
-      --btn: #1a1f2a;
-      --btn-border: #2a3242;
-      --on: #21314b;
-      --on-border: #3c82f6;
-      --wrong: #7a1f1f;
-      --wrong-border: #a33;
-      --radius: 3px;
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    .app {
-      min-height: 100%;
-      padding: calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 16px);
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 12px;
-      max-width: 700px;
-      margin: 0 auto;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM_ROOT // TOOLS</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: VT323 for that retro terminal look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    /* Filters */
-    #filters {
-      border: 1px solid var(--btn-border);
-      border-radius: var(--radius);
-      padding: 10px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.0));
-    }
-    #filters .row {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-    }
-    #filters .row + .row { margin-top: 8px; }
-    button.toggle {
-      appearance: none;
-      border: 1px solid var(--btn-border);
-      background: var(--btn);
-      color: var(--fg);
-      border-radius: 3px;
-      padding: 10px 8px;
-      font-size: clamp(14px, 3.4vw, 16px);
-      font-weight: 700;
-      width: 100%;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 0.05s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-      box-shadow: 0 2px 0 rgba(0,0,0,0.35);
-    }
-    button.toggle:active { transform: translateY(1px); }
-    button.toggle.on {
-      background: var(--on);
-      border-color: var(--on-border);
-      box-shadow: 0 2px 0 rgba(29,78,216,0.35);
-    }
-    button#allBtn {
-      grid-column: 1 / -1;
-      padding: 12px;
-      font-size: clamp(14px, 3.6vw, 17px);
-    }
-
-    /* Problem */
-    #problem {
-      display: grid;
-      place-items: center;
-      text-align: center;
-      font-weight: 700;
-      line-height: 1.1;
-      padding: 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--btn-border);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #prompt {
-      font-size: clamp(40px, 10vw, 80px);
-      letter-spacing: 1px;
-    }
-    #sub {
-      margin-top: 8px;
-      font-size: clamp(12px, 2.8vw, 14px);
-      color: var(--muted);
-    }
-
-    /* Answers */
-    #answers {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    button.answer {
-      appearance: none;
-      border: 1px solid var(--btn-border);
-      background: var(--btn);
-      color: var(--fg);
-      border-radius: var(--radius);
-      padding: 18px 14px;
-      font-size: clamp(20px, 5.5vw, 28px);
-      font-weight: 700;
-      width: 100%;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 0.05s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-      box-shadow: 0 2px 0 rgba(0,0,0,0.35);
-    }
-    button.answer:active { transform: translateY(1px); }
-    button.answer.wrong {
-      background: var(--wrong);
-      border-color: var(--wrong-border);
-      color: #ffd7d7;
-      box-shadow: 0 2px 0 rgba(128,0,0,0.35);
-    }
-    button.answer:disabled { opacity: 0.75; cursor: default; }
-  </style>
-</head>
-<body>
-  <main class="app">
-    <!-- NEW: number focus controls -->
-    <section id="filters" aria-label="Focus numbers (select one or more)">
-      <div class="row" id="numRow1"></div>
-      <div class="row" id="numRow2"></div>
-      <div class="row"><button id="allBtn" class="toggle" type="button" aria-pressed="true">All</button></div>
-    </section>
-
-    <section id="problem" aria-live="polite" aria-atomic="true">
-      <div id="prompt">×</div>
-      
-    </section>
-
-    <section id="answers" role="group" aria-label="Answer choices"></section>
-  </main>
-
-  <script>
-    // Range configuration
-    const MIN = 0, MAX = 12;
-
-    // Elements
-    const promptEl  = document.getElementById('prompt');
-    const answersEl = document.getElementById('answers');
-    const numRow1   = document.getElementById('numRow1');
-    const numRow2   = document.getElementById('numRow2');
-    const allBtn    = document.getElementById('allBtn');
-
-    // State
-    let current = { a: 0, b: 0, product: 0 };
-    const ALL_NUMS = Array.from({length: MAX - MIN + 1}, (_, i) => i + MIN);
-    const selected = new Set(ALL_NUMS); // default: all selected
-
-    // Utilities
-    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const sample = arr => arr[Math.floor(Math.random() * arr.length)];
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
-    // Build number toggle buttons 0–12
-    function buildNumberToggles() {
-      numRow1.innerHTML = '';
-      numRow2.innerHTML = '';
-      const firstRow = ALL_NUMS.slice(0, 7);   // 0..6
-      const secondRow = ALL_NUMS.slice(7);     // 7..12
-
-      const makeBtn = (n) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'toggle on';
-        btn.textContent = String(n);
-        btn.dataset.n = String(n);
-        btn.setAttribute('aria-pressed', 'true');
-        btn.addEventListener('click', () => toggleNumber(n));
-        return btn;
-      };
-
-      firstRow.forEach(n => numRow1.appendChild(makeBtn(n)));
-      secondRow.forEach(n => numRow2.appendChild(makeBtn(n)));
-      allBtn.addEventListener('click', selectAll);
-      updateAllIndicator();
-    }
-
-    function updateAllIndicator() {
-      const isAll = selected.size === ALL_NUMS.length;
-      allBtn.classList.toggle('on', isAll);
-      allBtn.setAttribute('aria-pressed', String(isAll));
-    }
-
-    function updateNumberButtonUI(n, on) {
-      const btn = document.querySelector(`button.toggle[data-n="${n}"]`);
-      if (!btn) return;
-      btn.classList.toggle('on', on);
-      btn.setAttribute('aria-pressed', String(on));
-    }
-
-    function selectAll() {
-      ALL_NUMS.forEach(n => selected.add(n));
-      document.querySelectorAll('button.toggle[data-n]').forEach(b => {
-        b.classList.add('on');
-        b.setAttribute('aria-pressed', 'true');
-      });
-      updateAllIndicator();
-      next(true);
-    }
-
-    function toggleNumber(n) {
-      if (selected.has(n)) {
-        // Prevent empty set: keep at least one selected
-        if (selected.size === 1) return;
-        selected.delete(n);
-        updateNumberButtonUI(n, false);
-      } else {
-        selected.add(n);
-        updateNumberButtonUI(n, true);
-      }
-      updateAllIndicator();
-      next(true);
-    }
-
-    // Problem generation honoring selected numbers:
-    // ensure at least one factor is within the selected set
-    function pickProblemFocused() {
-      const s = sample([...selected]);               // pick one selected number
-      const placeOnA = Math.random() < 0.5;
-      const other = randInt(MIN, MAX);
-      const a = placeOnA ? s : other;
-      const b = placeOnA ? other : s;
-      return { a, b, product: a * b };
-    }
-
-    function generateWrongAnswers(correct) {
-      const wrongs = new Set();
-      const tweaks = [-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10,11,12];
-      let tries = 0;
-      while (wrongs.size < 3 && tries < 100) {
-        tries++;
-        let candidate;
-        if (Math.random() < 0.6) {
-          const t = tweaks[randInt(0, tweaks.length - 1)];
-          candidate = correct + t;
-        } else {
-          const nearA = Math.max(MIN, Math.min(MAX, current.a + (Math.random() < 0.5 ? -1 : 1)));
-          const nearB = Math.max(MIN, Math.min(MAX, current.b + (Math.random() < 0.5 ? -1 : 1)));
-          candidate = Math.random() < 0.5 ? nearA * current.b : current.a * nearB;
+    <style>
+        :root {
+            /* DEFAULT: P3 AMBER PHOSPHOR
+               Hex: #FFB000 (Standard Amber)
+               RGB: 255, 176, 0
+            */
+            --rgb-main: 255, 176, 0;
+            --rgb-dim: 143, 90, 0;
+            --hex-bg: #0a0500; /* Deep Amber-Black */
         }
-        if (candidate !== correct && candidate >= 0) wrongs.add(candidate);
-      }
-      while (wrongs.size < 3) {
-        const x = randInt(MIN, MAX) * randInt(MIN, MAX);
-        if (x !== correct) wrongs.add(x);
-      }
-      return [...wrongs].slice(0,3);
-    }
 
-    function renderAnswers(options, correct) {
-      answersEl.innerHTML = '';
-      options.forEach(val => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'answer';
-        btn.textContent = String(val);
-        btn.addEventListener('click', () => {
-          if (val === correct) {
-            next();
-          } else {
-            btn.classList.add('wrong');
-            btn.disabled = true;
-          }
-        }, { passive: true });
-        answersEl.appendChild(btn);
-      });
-    }
+        /* MATRIX GREEN THEME OVERRIDE */
+        body.theme-green {
+            /* MATRIX GREEN (With Blue Shift)
+               Hex: #00FF66 (Spring Green) - Gives that cinematic teal-green tint
+               RGB: 0, 255, 102
+            */
+            --rgb-main: 0, 255, 102; 
+            --rgb-dim: 0, 143, 30;
+            --hex-bg: #020a05;
+        }
 
-    function next(force = false) {
-      // Generate a fresh problem, optionally forced by filter changes
-      current = pickProblemFocused();
-      promptEl.textContent = `${current.a} × ${current.b} = ?`;
-      const correct = current.product;
-      const wrongs = generateWrongAnswers(correct);
-      const options = shuffle([correct, ...wrongs]);
-      renderAnswers(options, correct);
-    }
+        body {
+            background-color: var(--hex-bg);
+            color: rgb(var(--rgb-main));
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
 
-    // Init
-    buildNumberToggles();
-    next();
+        /* CRT Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
 
-    // Prevent double-tap zoom on iOS for faster tapping
-    let lastTouch = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouch <= 300) e.preventDefault();
-      lastTouch = now;
-    }, { passive: false });
-  </script>
+        /* Subtle Screen Flicker - Now Dynamic */
+        .flicker {
+            animation: flicker 0.15s infinite;
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(var(--rgb-main), 0.02);
+            z-index: 49;
+        }
+
+        /* Text Glow - Dynamic */
+        .glow-text {
+            text-shadow: 0 0 5px rgba(var(--rgb-main), 0.5), 0 0 10px rgba(var(--rgb-main), 0.3);
+        }
+
+        /* Card Styles */
+        .terminal-card {
+            background: rgba(var(--rgb-dim), 0.1); 
+            border: 1px solid rgba(var(--rgb-dim), 0.5);
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .terminal-card:hover {
+            border-color: rgb(var(--rgb-main));
+            box-shadow: 0 0 15px rgba(var(--rgb-main), 0.15);
+            transform: translateY(-2px);
+            background: rgba(var(--rgb-dim), 0.2);
+        }
+
+        /* Corner accents for cards */
+        .corner {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-color: rgb(var(--rgb-main));
+            border-style: solid;
+            transition: all 0.3s;
+        }
+        .top-left { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .top-right { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .bottom-left { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .bottom-right { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .terminal-card:hover .corner {
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+        }
+
+        /* Button Style */
+        .retro-btn {
+            background: transparent;
+            border: 1px solid rgba(var(--rgb-dim), 1);
+            color: rgba(var(--rgb-dim), 1);
+            font-family: 'Share Tech Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .retro-btn:hover {
+            color: rgb(var(--rgb-main));
+            border-color: rgb(var(--rgb-main));
+            box-shadow: 0 0 8px rgba(var(--rgb-main), 0.4);
+            text-shadow: 0 0 4px rgba(var(--rgb-main), 0.8);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: rgba(var(--rgb-dim), 1); }
+        ::-webkit-scrollbar-thumb:hover { background: rgb(var(--rgb-main)); }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            5% { opacity: 0.95; }
+            10% { opacity: 0.9; }
+            15% { opacity: 0.95; }
+            20% { opacity: 0.99; }
+            100% { opacity: 0.96; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <!-- Screen Effects -->
+    <div class="scanlines"></div>
+    <div class="flicker"></div>
+
+    <!-- Main Layout -->
+    <div class="max-w-6xl mx-auto relative z-10">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-end mb-8 border-b pb-4" style="border-color: rgba(var(--rgb-dim), 1);">
+            <div>
+                <!-- SIZE CHANGED: Reduced from text-3xl md:text-5xl to text-2xl md:text-4xl -->
+                <h1 class="text-2xl md:text-4xl font-bold glow-text tracking-wider">SYSTEM_ROOT</h1>
+                <p class="text-sm opacity-70 mt-2">USER: ADMIN // ACCESS_LEVEL: 01</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <button id="theme-toggle" class="retro-btn px-3 py-1 text-xs uppercase tracking-widest rounded-sm flex items-center gap-2">
+                    <i data-lucide="monitor" class="w-3 h-3"></i> [COLOR_MODE]
+                </button>
+                <div class="text-right hidden md:block mt-2">
+                    <div id="clock" class="text-xl glow-text">00:00:00</div>
+                    <div class="text-xs" style="color: rgba(var(--rgb-dim), 1);">UPTIME: 99.9%</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Bento Grid Container -->
+        <div id="grid-container" class="grid grid-cols-1 md:grid-cols-4 auto-rows-[180px] gap-4">
+            <!-- Grid items injected via JS -->
+        </div>
+
+        <!-- Terminal Footer -->
+        <footer class="mt-12 text-center text-xs opacity-50 font-mono">
+            <span class="animate-pulse">_</span> END OF LINE
+        </footer>
+    </div>
+
+    <script>
+        // ============================================
+        // 🛠 CONFIGURATION: EDIT THIS SECTION
+        // ============================================
+        const tools = [
+            // LARGE CARD (Introduction or Main App)
+            {
+                title: "DASHBOARD_MAIN",
+                desc: "Primary control interface for deployed web applications. Select a module to execute.",
+                url: "#",
+                icon: "terminal",
+                span: "md:col-span-2 md:row-span-2", // Large 2x2 block
+                status: "ONLINE",
+                isHighlight: true
+            },
+            // STANDARD CARDS
+            {
+                title: "MULTIPLICATION_CARDS",
+                desc: "Practice multiplication tables",
+                url: "./apps/multiplication/index.html",
+                icon: "file-code",
+                span: "md:col-span-1",
+                status: "IDLE"
+            },
+            {
+                title: "NET_SCANNER",
+                desc: "Internal network topology mapper.",
+                url: "#",
+                icon: "network",
+                span: "md:col-span-1",
+                status: "ACTIVE"
+            },
+            {
+                title: "IMG_PROCESSOR",
+                desc: "Batch compression and resizing unit.",
+                url: "#",
+                icon: "image",
+                span: "md:col-span-1",
+                status: "READY"
+            },
+            {
+                title: "NOTE_TAKER",
+                desc: "Encrypted local storage scratchpad.",
+                url: "#",
+                icon: "edit-3",
+                span: "md:col-span-1",
+                status: "LOCKED"
+            },
+            // WIDE CARD
+            {
+                title: "SERVER_LOGS",
+                desc: "Real-time error tracking and telemetry monitoring dashboard.",
+                url: "#",
+                icon: "activity",
+                span: "md:col-span-2",
+                status: "MONITORING"
+            },
+            // SMALLER UTILITIES
+            {
+                title: "CALCULATOR",
+                desc: "Scientific mode.",
+                url: "#",
+                icon: "calculator",
+                span: "md:col-span-1",
+                status: "READY"
+            },
+             {
+                title: "SETTINGS",
+                desc: "Config.",
+                url: "#",
+                icon: "settings",
+                span: "md:col-span-1",
+                status: "ADMIN"
+            }
+        ];
+
+        // ============================================
+        // ⚙️ RENDER LOGIC
+        // ============================================
+        const container = document.getElementById('grid-container');
+
+        function renderGrid() {
+            container.innerHTML = tools.map(tool => {
+                // Determine highlight styles dynamically via classes
+                const highlightClasses = tool.isHighlight 
+                    ? 'border-opacity-100 bg-opacity-20' 
+                    : 'border-opacity-50';
+                
+                return `
+                <a href="${tool.url}" class="terminal-card group relative p-6 flex flex-col justify-between overflow-hidden ${tool.span} ${highlightClasses}">
+                    <!-- Decorative Corners -->
+                    <div class="corner top-left"></div>
+                    <div class="corner top-right"></div>
+                    <div class="corner bottom-left"></div>
+                    <div class="corner bottom-right"></div>
+
+                    <!-- Header -->
+                    <div class="flex justify-between items-start z-20">
+                        <div class="p-2 border rounded bg-black/50 group-hover:bg-[rgb(var(--rgb-main))] group-hover:text-black transition-colors" style="border-color: rgba(var(--rgb-dim), 1);">
+                            <i data-lucide="${tool.icon}" class="w-6 h-6"></i>
+                        </div>
+                        <span class="text-[10px] tracking-widest border px-2 py-0.5 rounded transition-colors group-hover:text-[rgb(var(--rgb-main))] group-hover:border-[rgb(var(--rgb-main))]" style="border-color: rgba(var(--rgb-dim), 1); color: rgba(var(--rgb-dim), 1);">
+                            [${tool.status}]
+                        </span>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="z-20 mt-4">
+                        <h3 class="text-xl font-bold glow-text mb-2 group-hover:translate-x-1 transition-transform">
+                            > ${tool.title}
+                        </h3>
+                        <p class="text-sm opacity-70 leading-relaxed font-[VT323] text-lg">
+                            ${tool.desc}
+                        </p>
+                    </div>
+
+                    <!-- Background Number Decoration -->
+                    <div class="absolute -bottom-4 -right-4 text-9xl font-bold opacity-5 select-none pointer-events-none group-hover:opacity-10 transition-opacity" style="color: rgba(var(--rgb-dim), 1);">
+                        ${Math.floor(Math.random() * 99)}
+                    </div>
+                </a>
+                `;
+            }).join('');
+        }
+
+        // Initialize Grid
+        renderGrid();
+
+        // Clock Logic
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('clock').innerText = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Theme Switcher Logic
+        const themeBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        themeBtn.addEventListener('click', () => {
+            // UPDATED: Now toggles 'theme-green' because Amber is default
+            body.classList.toggle('theme-green');
+        });
+
+        // Icon Initialization
+        function initIcons() {
+            if (window.lucide) {
+                lucide.createIcons();
+            } else {
+                setTimeout(initIcons, 100);
+            }
+        }
+        initIcons();
+    </script>
 </body>
 </html>
