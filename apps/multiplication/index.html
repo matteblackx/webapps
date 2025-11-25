@@ -1,1 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Times Tables — Tap Practice</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --fg: #e6e6e6;
+      --muted: #9aa3ad;
+      --btn: #1a1f2a;
+      --btn-border: #2a3242;
+      --on: #21314b;
+      --on-border: #3c82f6;
+      --wrong: #7a1f1f;
+      --wrong-border: #a33;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .app {
+      min-height: 100%;
+      padding: calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 16px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
 
+    /* Filters */
+    #filters {
+      border: 1px solid var(--btn-border);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.0));
+    }
+    #filters .row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    #filters .row + .row { margin-top: 8px; }
+    button.toggle {
+      appearance: none;
+      border: 1px solid var(--btn-border);
+      background: var(--btn);
+      color: var(--fg);
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: clamp(14px, 3.4vw, 16px);
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.05s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.35);
+    }
+    button.toggle:active { transform: translateY(1px); }
+    button.toggle.on {
+      background: var(--on);
+      border-color: var(--on-border);
+      box-shadow: 0 2px 0 rgba(29,78,216,0.35);
+    }
+    button#allBtn {
+      grid-column: 1 / -1;
+      padding: 12px;
+      font-size: clamp(14px, 3.6vw, 17px);
+    }
+
+    /* Problem */
+    #problem {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 700;
+      line-height: 1.1;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--btn-border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #prompt {
+      font-size: clamp(40px, 10vw, 80px);
+      letter-spacing: 1px;
+    }
+    #sub {
+      margin-top: 8px;
+      font-size: clamp(12px, 2.8vw, 14px);
+      color: var(--muted);
+    }
+
+    /* Answers */
+    #answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    button.answer {
+      appearance: none;
+      border: 1px solid var(--btn-border);
+      background: var(--btn);
+      color: var(--fg);
+      border-radius: var(--radius);
+      padding: 18px 14px;
+      font-size: clamp(20px, 5.5vw, 28px);
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.05s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.35);
+    }
+    button.answer:active { transform: translateY(1px); }
+    button.answer.wrong {
+      background: var(--wrong);
+      border-color: var(--wrong-border);
+      color: #ffd7d7;
+      box-shadow: 0 2px 0 rgba(128,0,0,0.35);
+    }
+    button.answer:disabled { opacity: 0.75; cursor: default; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <!-- NEW: number focus controls -->
+    <section id="filters" aria-label="Focus numbers (select one or more)">
+      <div class="row" id="numRow1"></div>
+      <div class="row" id="numRow2"></div>
+      <div class="row"><button id="allBtn" class="toggle" type="button" aria-pressed="true">All</button></div>
+    </section>
+
+    <section id="problem" aria-live="polite" aria-atomic="true">
+      <div id="prompt">×</div>
+      <div id="sub">Tap the correct answer below</div>
+    </section>
+
+    <section id="answers" role="group" aria-label="Answer choices"></section>
+  </main>
+
+  <script>
+    // Range configuration
+    const MIN = 0, MAX = 12;
+
+    // Elements
+    const promptEl  = document.getElementById('prompt');
+    const answersEl = document.getElementById('answers');
+    const numRow1   = document.getElementById('numRow1');
+    const numRow2   = document.getElementById('numRow2');
+    const allBtn    = document.getElementById('allBtn');
+
+    // State
+    let current = { a: 0, b: 0, product: 0 };
+    const ALL_NUMS = Array.from({length: MAX - MIN + 1}, (_, i) => i + MIN);
+    const selected = new Set(ALL_NUMS); // default: all selected
+
+    // Utilities
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const sample = arr => arr[Math.floor(Math.random() * arr.length)];
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Build number toggle buttons 0–12
+    function buildNumberToggles() {
+      numRow1.innerHTML = '';
+      numRow2.innerHTML = '';
+      const firstRow = ALL_NUMS.slice(0, 7);   // 0..6
+      const secondRow = ALL_NUMS.slice(7);     // 7..12
+
+      const makeBtn = (n) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'toggle on';
+        btn.textContent = String(n);
+        btn.dataset.n = String(n);
+        btn.setAttribute('aria-pressed', 'true');
+        btn.addEventListener('click', () => toggleNumber(n));
+        return btn;
+      };
+
+      firstRow.forEach(n => numRow1.appendChild(makeBtn(n)));
+      secondRow.forEach(n => numRow2.appendChild(makeBtn(n)));
+      allBtn.addEventListener('click', selectAll);
+      updateAllIndicator();
+    }
+
+    function updateAllIndicator() {
+      const isAll = selected.size === ALL_NUMS.length;
+      allBtn.classList.toggle('on', isAll);
+      allBtn.setAttribute('aria-pressed', String(isAll));
+    }
+
+    function updateNumberButtonUI(n, on) {
+      const btn = document.querySelector(`button.toggle[data-n="${n}"]`);
+      if (!btn) return;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', String(on));
+    }
+
+    function selectAll() {
+      ALL_NUMS.forEach(n => selected.add(n));
+      document.querySelectorAll('button.toggle[data-n]').forEach(b => {
+        b.classList.add('on');
+        b.setAttribute('aria-pressed', 'true');
+      });
+      updateAllIndicator();
+      next(true);
+    }
+
+    function toggleNumber(n) {
+      if (selected.has(n)) {
+        // Prevent empty set: keep at least one selected
+        if (selected.size === 1) return;
+        selected.delete(n);
+        updateNumberButtonUI(n, false);
+      } else {
+        selected.add(n);
+        updateNumberButtonUI(n, true);
+      }
+      updateAllIndicator();
+      next(true);
+    }
+
+    // Problem generation honoring selected numbers:
+    // ensure at least one factor is within the selected set
+    function pickProblemFocused() {
+      const s = sample([...selected]);               // pick one selected number
+      const placeOnA = Math.random() < 0.5;
+      const other = randInt(MIN, MAX);
+      const a = placeOnA ? s : other;
+      const b = placeOnA ? other : s;
+      return { a, b, product: a * b };
+    }
+
+    function generateWrongAnswers(correct) {
+      const wrongs = new Set();
+      const tweaks = [-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10,11,12];
+      let tries = 0;
+      while (wrongs.size < 3 && tries < 100) {
+        tries++;
+        let candidate;
+        if (Math.random() < 0.6) {
+          const t = tweaks[randInt(0, tweaks.length - 1)];
+          candidate = correct + t;
+        } else {
+          const nearA = Math.max(MIN, Math.min(MAX, current.a + (Math.random() < 0.5 ? -1 : 1)));
+          const nearB = Math.max(MIN, Math.min(MAX, current.b + (Math.random() < 0.5 ? -1 : 1)));
+          candidate = Math.random() < 0.5 ? nearA * current.b : current.a * nearB;
+        }
+        if (candidate !== correct && candidate >= 0) wrongs.add(candidate);
+      }
+      while (wrongs.size < 3) {
+        const x = randInt(MIN, MAX) * randInt(MIN, MAX);
+        if (x !== correct) wrongs.add(x);
+      }
+      return [...wrongs].slice(0,3);
+    }
+
+    function renderAnswers(options, correct) {
+      answersEl.innerHTML = '';
+      options.forEach(val => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'answer';
+        btn.textContent = String(val);
+        btn.addEventListener('click', () => {
+          if (val === correct) {
+            next();
+          } else {
+            btn.classList.add('wrong');
+            btn.disabled = true;
+          }
+        }, { passive: true });
+        answersEl.appendChild(btn);
+      });
+    }
+
+    function next(force = false) {
+      // Generate a fresh problem, optionally forced by filter changes
+      current = pickProblemFocused();
+      promptEl.textContent = `${current.a} × ${current.b} = ?`;
+      const correct = current.product;
+      const wrongs = generateWrongAnswers(correct);
+      const options = shuffle([correct, ...wrongs]);
+      renderAnswers(options, correct);
+    }
+
+    // Init
+    buildNumberToggles();
+    next();
+
+    // Prevent double-tap zoom on iOS for faster tapping
+    let lastTouch = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouch <= 300) e.preventDefault();
+      lastTouch = now;
+    }, { passive: false });
+  </script>
+</body>
+</html>
