@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>MARC .mrk → .mrc | Retro Console</title>
+    <title>MARC .mrk → .mrc</title>
 
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -416,8 +416,11 @@ packages = ["pymarc"]
       });
     </script>
 
-    <!-- PyScript: pymarc .mrk → .mrc -->
-    <script type="py">
+        <!-- PyScript: pymarc .mrk → .mrc -->
+    <py-script>
+import micropip
+await micropip.install("pymarc")
+
 from js import Blob, document, URL
 from pymarc import MARCMakerReader
 import io
@@ -460,6 +463,7 @@ def make_mrc(event=None):
 btn = document.getElementById("convert-btn")
 if btn is not None:
     btn.addEventListener("click", make_mrc)
-    </script>
+    </py-script>
+
   </body>
 </html>
