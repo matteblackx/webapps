@@ -440,7 +440,7 @@
       });
     </script>
 
-   <py-config>
+<py-config>
 {
   "packages": ["pymarc"]
 }
@@ -452,24 +452,61 @@ import traceback
 
 log_box = document.querySelector("#log-box")
 
-def log(msg: str) -> None:
+def log(message: str) -> None:
     if log_box is None:
         return
     current = log_box.value or ""
-    log_box.value = (current + "\n" + msg).lstrip()
+    if current:
+        log_box.value = current + "\n" + message
+    else:
+        log_box.value = message
 
+# --- pymarc probe ---
 try:
     import pymarc
     log(">> pymarc import OK.")
     try:
-        log(f">> pymarc version: {pymarc.__version__}")
+        v = getattr(pymarc, "__version__", None)
+        if v:
+            log(f">> pymarc version: {v}")
+        else:
+            log(">> pymarc version: <unknown>")
     except Exception:
         log(">> pymarc version: <unknown>")
 except Exception as e:
     log(">> ERROR importing pymarc:")
     log(str(e))
     log(traceback.format_exc())
-</script>
 
+# --- echo app handlers ---
+
+def copy_text(event=None) -> None:
+    try:
+        inp = document.querySelector("#input-box")
+        out = document.querySelector("#output-box")
+        if inp is None or out is None:
+            log(">> ERROR: input or output element not found.")
+            return
+        text = inp.value or ""
+        out.value = text
+        log(f">> OK: Copied {len(text)} characters from INPUT to OUTPUT.")
+    except Exception as e:
+        log(f">> PYTHON ERROR in copy_text: {e!r}")
+        log(traceback.format_exc())
+
+def clear_all(event=None) -> None:
+    try:
+        for sel in ("#input-box", "#output-box", "#log-box"):
+            el = document.querySelector(sel)
+            if el is not None:
+                el.value = ""
+        log(">> State cleared.")
+    except Exception as e:
+        log(f">> PYTHON ERROR in clear_all: {e!r}")
+        log(traceback.format_exc())
+
+log(">> PyScript ready. Type in INPUT, then click RUN // COPY VIA PYTHON.")
+</script>
+    
   </body>
 </html>
