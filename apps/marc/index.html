@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>MARC .mrk → .mrc | Retro Console</title>
+    <title>PyScript Echo Console</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <!-- Tailwind CDN -->
+    <!-- Tailwind CDN (layout/utilities) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Google Fonts -->
@@ -18,27 +19,20 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Pin a specific PyScript version (no /latest/) -->
+    <!-- PyScript pinned version -->
     <link
       rel="stylesheet"
-      href="https://pyscript.net/releases/2025.11.2/core.css"
+      href="https://pyscript.net/releases/2025.8.1/core.css"
     />
     <script
       type="module"
-      src="https://pyscript.net/releases/2025.11.2/core.js"
+      src="https://pyscript.net/releases/2025.8.1/core.js"
     ></script>
-
-    <!-- Tell PyScript to install pymarc from PyPI -->
-    <py-config>
-{
-  "packages": ["pymarc"]
-}
-    </py-config>
 
     <!-- Retro CRT / terminal styling -->
     <style>
       :root {
-        --rgb-main: 255, 191, 0; /* amber */
+        --rgb-main: 255, 191, 0;
         --rgb-dim: 130, 90, 20;
         --hex-bg: #050509;
       }
@@ -272,17 +266,17 @@
         <!-- Header -->
         <header
           class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8"
-        >
+>
           <div>
             <h1
               class="glow-text text-2xl md:text-4xl tracking-[0.35em] uppercase"
             >
-              MARC CONSOLE
+              PYSCRIPT ECHO
             </h1>
             <p
               class="mt-2 text-xs md:text-sm text-[rgba(200,160,90,0.9)] tracking-[0.25em] uppercase"
             >
-              USER: LOCAL &nbsp;&nbsp;|&nbsp;&nbsp; ACCESS: CATALOG OPS
+              USER: LOCAL &nbsp;&nbsp;|&nbsp;&nbsp; MODE: TEXT LOOPBACK
             </p>
           </div>
           <div class="flex items-center gap-4 ml-auto">
@@ -298,35 +292,33 @@
           </div>
         </header>
 
-        <!-- Main grid -->
+        <!-- Main card -->
         <main
           class="grid grid-cols-1 md:grid-cols-4 auto-rows-[minmax(220px,auto)] gap-4"
         >
-          <!-- MARC converter card -->
           <section class="terminal-card md:col-span-4 p-4 md:p-6 lg:p-8">
-            <!-- Corner accents -->
+            <!-- Corners -->
             <div class="corner top-left"></div>
             <div class="corner top-right"></div>
             <div class="corner bottom-left"></div>
             <div class="corner bottom-right"></div>
 
-            <!-- Card content -->
             <div class="flex items-start justify-between gap-4 mb-4">
               <div class="flex items-center gap-3">
                 <div
                   class="w-10 h-10 flex items-center justify-center border border-[rgba(120,90,40,0.9)] bg-black/60"
-                >
-                  <i data-lucide="hard-drive" class="w-5 h-5"></i>
+>
+                  <i data-lucide="terminal" class="w-5 h-5"></i>
                 </div>
                 <div>
                   <div class="glow-text text-lg md:text-xl">
-                    &gt; .MRK → .MRC ENCODER
+                    &gt; PYTHON ECHO TEST
                   </div>
                   <div
                     class="body-text text-[rgba(220,190,120,0.9)] mt-1"
                   >
-                    Paste MARC mnemonic (.mrk) text and emit a binary
-                    .mrc file to download.
+                    Paste text above. PyScript copies it to the output area and
+                    logs activity below.
                   </div>
                 </div>
               </div>
@@ -335,39 +327,68 @@
               </div>
             </div>
 
+            <!-- Input -->
             <label
-              for="mrk-input"
+              for="input-box"
               class="block text-xs tracking-[0.2em] uppercase mb-2 text-[rgba(220,190,120,0.9)]"
             >
-              INPUT BUFFER // .MRK
+              INPUT BUFFER
             </label>
             <textarea
-              id="mrk-input"
-              class="terminal-input w-full h-56 md:h-64 text-xs md:text-sm p-3 leading-relaxed"
-              placeholder="=LDR  01145cam a2200301 i 4500
-=001  123456789
-=008  251124s2025    nyu           000 1 eng d
-=020  \\$a9781234567890$q(hardcover)
-=100  1\$aAuthor, Example.
-=245  10$aExample title :$ba MARC demo record.
-..."
+              id="input-box"
+              class="terminal-input w-full h-32 text-xs md:text-sm p-3 mb-4 leading-relaxed"
+              placeholder="Type or paste any text here..."
             ></textarea>
 
-            <div class="mt-4 flex flex-col md:flex-row md:items-center gap-3">
-              <button id="convert-btn" class="retro-btn">
-                RUN // BUILD .MRC
+            <!-- Output -->
+            <label
+              for="output-box"
+              class="block text-xs tracking-[0.2em] uppercase mb-2 text-[rgba(220,190,120,0.9)]"
+            >
+              OUTPUT BUFFER (FILLED BY PYTHON)
+            </label>
+            <textarea
+              id="output-box"
+              class="terminal-input w-full h-32 text-xs md:text-sm p-3 mb-4 leading-relaxed"
+              placeholder="PyScript will mirror input here when you click RUN."
+            ></textarea>
+
+            <!-- Controls -->
+            <div class="mt-2 flex flex-col md:flex-row md:items-center gap-3">
+              <button
+                id="copy-btn"
+                class="retro-btn"
+                py-click="copy_text"
+              >
+                RUN // COPY VIA PYTHON
+              </button>
+              <button
+                id="clear-btn"
+                class="retro-btn"
+                py-click="clear_all"
+              >
+                CLEAR BUFFERS
               </button>
               <div
                 class="text-xs body-text text-[rgba(220,190,120,0.9)] md:ml-2"
               >
-                Output file name: <span class="glow-text">records.mrc</span>
+                Log area shows internal messages and any Python errors.
               </div>
             </div>
 
-            <pre
-              id="log"
-              class="mt-4 text-xs body-text text-[rgba(220,190,120,0.9)] whitespace-pre-wrap"
-            ></pre>
+            <!-- Log / console -->
+            <label
+              for="log-box"
+              class="block text-xs tracking-[0.2em] uppercase mt-4 mb-2 text-[rgba(220,190,120,0.9)]"
+            >
+              LOG CONSOLE
+            </label>
+            <textarea
+              id="log-box"
+              class="terminal-input w-full h-32 text-[0.7rem] p-3 leading-relaxed"
+              placeholder="PyScript log output will appear here..."
+              readonly
+            ></textarea>
 
             <div class="bg-digit">
               01
@@ -419,50 +440,49 @@
       });
     </script>
 
-    <!-- PyScript: pymarc .mrk → .mrc  -->
+    <!-- PyScript: echo + logging -->
     <script type="py">
-from js import Blob, document, URL
-from pymarc import MARCMakerReader
-import io
+from pyscript import document
 
-def make_mrc(event=None):
-    textarea = document.getElementById("mrk-input")
-    log = document.getElementById("log")
-    text = textarea.value if textarea is not None else ""
-
-    if not text.strip():
-        if log is not None:
-            log.innerText = ">> No input detected in buffer."
+def log(message: str) -> None:
+    """Append a line to the log textarea."""
+    log_box = document.querySelector("#log-box")
+    if log_box is None:
         return
+    current = log_box.value or ""
+    if current:
+        log_box.value = current + "\n" + message
+    else:
+        log_box.value = message
 
+def copy_text(event=None) -> None:
+    """Read input-box, write to output-box, log the result."""
     try:
-        reader = MARCMakerReader(io.StringIO(text))
-        data = b"".join(rec.as_marc() for rec in reader)
-        if not data:
-            if log is not None:
-                log.innerText = ">> Parser ran but produced zero records. Check .mrk formatting."
+        inp = document.querySelector("#input-box")
+        out = document.querySelector("#output-box")
+        if inp is None or out is None:
+            log(">> ERROR: input or output element not found.")
             return
+
+        text = inp.value or ""
+        out.value = text
+        log(f">> OK: Copied {len(text)} characters from INPUT to OUTPUT.")
     except Exception as e:
-        if log is not None:
-            log.innerText = f">> Error while parsing MARC: {e}"
-        return
+        log(f">> PYTHON ERROR in copy_text: {e!r}")
 
-    blob = Blob.new([data], {"type": "application/octet-stream"})
-    url = URL.createObjectURL(blob)
-    a = document.createElement("a")
-    a.href = url
-    a.download = "records.mrc"
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
+def clear_all(event=None) -> None:
+    """Clear input, output, and log areas."""
+    try:
+        for sel in ("#input-box", "#output-box", "#log-box"):
+            el = document.querySelector(sel)
+            if el is not None:
+                el.value = ""
+        log(">> State cleared.")
+    except Exception as e:
+        log(f">> PYTHON ERROR in clear_all: {e!r}")
 
-    if log is not None:
-        log.innerText = ">> Build complete. Download initiated: records.mrc"
-
-btn = document.getElementById("convert-btn")
-if btn is not None:
-    btn.addEventListener("click", make_mrc)
+# Initial log line so you can see PyScript actually ran.
+log(">> PyScript ready. Type in INPUT, then click RUN // COPY VIA PYTHON.")
     </script>
   </body>
 </html>
