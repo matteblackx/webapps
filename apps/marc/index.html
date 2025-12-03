@@ -1,42 +1,465 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <title>MARC .mrk → .mrc</title>
-    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
-    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <meta charset="utf-8" />
+    <title>MARC .mrk → .mrc | Retro Console</title>
 
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- PyScript (Next-style API) -->
+    <link rel="stylesheet" href="https://pyscript.net/latest/core.css" />
+    <script type="module" src="https://pyscript.net/latest/core.js"></script>
+
+    <!-- PyScript config: install pymarc -->
     <py-config>
 packages = ["pymarc"]
     </py-config>
-  </head>
-  <body>
-    <h3>MARC .mrk → .mrc</h3>
-    <textarea id="mrk" rows="15" cols="80"
-      placeholder="Paste MARC .mrk / MARCMaker text here"></textarea><br>
-    <button id="go">Download .mrc</button>
 
-    <py-script>
-from pymarc import MARCMakerReader
+    <!-- Retro CRT / terminal styling -->
+    <style>
+      :root {
+        --rgb-main: 255, 191, 0; /* amber */
+        --rgb-dim: 130, 90, 20;
+        --hex-bg: #050509;
+      }
+
+      body.theme-green {
+        --rgb-main: 0, 255, 140;
+        --rgb-dim: 0, 140, 80;
+        --hex-bg: #020b05;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--hex-bg);
+        color: rgb(var(--rgb-main));
+        font-family: "Share Tech Mono", monospace;
+        transition: background-color 0.4s ease, color 0.4s ease;
+        overflow-x: hidden;
+      }
+
+      .body-text {
+        font-family: "VT323", monospace;
+        font-size: 1.05rem;
+      }
+
+      .glow-text {
+        text-shadow:
+          0 0 6px rgba(var(--rgb-main), 0.6),
+          0 0 14px rgba(var(--rgb-main), 0.4);
+      }
+
+      .scanlines,
+      .flicker {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 30;
+      }
+
+      .scanlines {
+        z-index: 40;
+        background-image: repeating-linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.35) 0,
+          rgba(0, 0, 0, 0.35) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+        mix-blend-mode: multiply;
+      }
+
+      .flicker {
+        z-index: 35;
+        background-color: rgba(var(--rgb-main), 0.02);
+        animation: flicker 0.12s infinite alternate;
+      }
+
+      @keyframes flicker {
+        from {
+          opacity: 0.9;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .terminal-card {
+        background: rgba(var(--rgb-dim), 0.12);
+        border: 1px solid rgba(var(--rgb-dim), 0.6);
+        position: relative;
+        overflow: hidden;
+        transition:
+          border-color 0.25s ease,
+          transform 0.25s ease,
+          box-shadow 0.25s ease,
+          background 0.25s ease;
+      }
+
+      .terminal-card:hover {
+        border-color: rgb(var(--rgb-main));
+        transform: translateY(-2px);
+        box-shadow: 0 0 24px rgba(var(--rgb-main), 0.18);
+        background: rgba(var(--rgb-dim), 0.22);
+      }
+
+      .terminal-card .corner {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-color: rgba(var(--rgb-main), 0.8);
+        border-style: solid;
+        opacity: 0.7;
+        transition:
+          width 0.3s ease,
+          height 0.3s ease,
+          opacity 0.3s ease;
+        pointer-events: none;
+      }
+
+      .terminal-card .corner.top-left {
+        top: 0;
+        left: 0;
+        border-width: 2px 0 0 2px;
+      }
+
+      .terminal-card .corner.top-right {
+        top: 0;
+        right: 0;
+        border-width: 2px 2px 0 0;
+      }
+
+      .terminal-card .corner.bottom-left {
+        bottom: 0;
+        left: 0;
+        border-width: 0 0 2px 2px;
+      }
+
+      .terminal-card .corner.bottom-right {
+        bottom: 0;
+        right: 0;
+        border-width: 0 2px 2px 0;
+      }
+
+      .terminal-card:hover .corner {
+        width: 100%;
+        height: 100%;
+        opacity: 0.16;
+      }
+
+      .retro-btn {
+        border: 1px solid rgba(var(--rgb-dim), 1);
+        background: transparent;
+        color: rgba(var(--rgb-main), 0.9);
+        font-family: "Share Tech Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.7rem;
+        padding: 0.4rem 0.9rem;
+        cursor: pointer;
+        transition:
+          border-color 0.2s ease,
+          color 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease,
+          transform 0.1s ease;
+      }
+
+      .retro-btn:hover {
+        border-color: rgb(var(--rgb-main));
+        color: rgb(var(--rgb-main));
+        box-shadow:
+          0 0 8px rgba(var(--rgb-main), 0.5),
+          0 0 18px rgba(var(--rgb-main), 0.3);
+        background: rgba(var(--rgb-dim), 0.15);
+        transform: translateY(-1px);
+      }
+
+      .retro-btn:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      .terminal-input {
+        background-color: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(var(--rgb-dim), 0.8);
+        color: rgb(var(--rgb-main));
+        font-family: "Share Tech Mono", monospace;
+      }
+
+      .terminal-input:focus {
+        outline: none;
+        border-color: rgb(var(--rgb-main));
+        box-shadow: 0 0 12px rgba(var(--rgb-main), 0.4);
+      }
+
+      .status-pill {
+        border: 1px solid rgba(var(--rgb-dim), 0.9);
+        color: rgba(var(--rgb-main), 0.96);
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 0.65rem;
+        padding: 0.18rem 0.65rem;
+        background: rgba(0, 0, 0, 0.6);
+      }
+
+      .bg-digit {
+        position: absolute;
+        bottom: 0.3rem;
+        right: 0.7rem;
+        font-size: 4.5rem;
+        font-weight: 700;
+        color: rgba(var(--rgb-dim), 0.65);
+        opacity: 0.12;
+        pointer-events: none;
+        user-select: none;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+
+      .terminal-card:hover .bg-digit {
+        opacity: 0.26;
+        transform: translate(6px, -6px);
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #000;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(var(--rgb-dim), 0.85);
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgb(var(--rgb-main));
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- CRT overlays -->
+    <div class="scanlines"></div>
+    <div class="flicker"></div>
+
+    <div class="relative z-10 min-h-screen">
+      <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header
+          class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8"
+        >
+          <div>
+            <h1
+              class="glow-text text-2xl md:text-4xl tracking-[0.35em] uppercase"
+            >
+              MARC CONSOLE
+            </h1>
+            <p
+              class="mt-2 text-xs md:text-sm text-[rgba(200,160,90,0.9)] tracking-[0.25em] uppercase"
+            >
+              USER: LOCAL &nbsp;&nbsp;|&nbsp;&nbsp; ACCESS: CATALOG OPS
+            </p>
+          </div>
+          <div class="flex items-center gap-4 ml-auto">
+            <button id="theme-toggle" class="retro-btn">
+              THEME
+            </button>
+            <div class="text-right text-xs md:text-sm">
+              <div id="clock" class="glow-text"></div>
+              <div class="text-[rgba(200,160,90,0.9)] tracking-[0.18em]">
+                STATUS: ONLINE
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main grid -->
+        <main
+          class="grid grid-cols-1 md:grid-cols-4 auto-rows-[minmax(220px,auto)] gap-4"
+        >
+          <!-- MARC converter card -->
+          <section
+            class="terminal-card md:col-span-4 p-4 md:p-6 lg:p-8"
+          >
+            <!-- Corner accents -->
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+
+            <!-- Card content -->
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 flex items-center justify-center border border-[rgba(120,90,40,0.9)] bg-black/60"
+                >
+                  <i data-lucide="hard-drive" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="glow-text text-lg md:text-xl">
+                    &gt; .MRK → .MRC ENCODER
+                  </div>
+                  <div
+                    class="body-text text-[rgba(220,190,120,0.9)] mt-1"
+                  >
+                    Paste MARC mnemonic (.mrk) text and emit a binary
+                    .mrc file to download.
+                  </div>
+                </div>
+              </div>
+              <div class="status-pill">
+                [ READY ]
+              </div>
+            </div>
+
+            <label
+              for="mrk-input"
+              class="block text-xs tracking-[0.2em] uppercase mb-2 text-[rgba(220,190,120,0.9)]"
+            >
+              INPUT BUFFER // .MRK
+            </label>
+            <textarea
+              id="mrk-input"
+              class="terminal-input w-full h-56 md:h-64 text-xs md:text-sm p-3 leading-relaxed"
+              placeholder="=LDR  01145cam a2200301 i 4500
+=001  123456789
+=008  251124s2025    nyu           000 1 eng d
+=020  \\$a9781234567890$q(hardcover)
+=100  1\$aAuthor, Example.
+=245  10$aExample title :$ba MARC demo record.
+..."
+            ></textarea>
+
+            <div class="mt-4 flex flex-col md:flex-row md:items-center gap-3">
+              <button
+                id="convert-btn"
+                class="retro-btn"
+              >
+                RUN // BUILD .MRC
+              </button>
+              <div
+                class="text-xs body-text text-[rgba(220,190,120,0.9)] md:ml-2"
+              >
+                Output file name: <span class="glow-text">records.mrc</span>
+              </div>
+            </div>
+
+            <pre
+              id="log"
+              class="mt-4 text-xs body-text text-[rgba(220,190,120,0.9)] whitespace-pre-wrap"
+            ></pre>
+
+            <div class="bg-digit">
+              01
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Theme + clock + icons JS -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.lucide && window.lucide.createIcons) {
+          lucide.createIcons();
+        }
+
+        const body = document.body;
+        const toggle = document.getElementById("theme-toggle");
+        if (toggle) {
+          toggle.addEventListener("click", () => {
+            body.classList.toggle("theme-green");
+          });
+        }
+
+        const clockEl = document.getElementById("clock");
+        function pad(n) {
+          return String(n).padStart(2, "0");
+        }
+        function updateClock() {
+          const d = new Date();
+          const date =
+            d.getFullYear() +
+            "-" +
+            pad(d.getMonth() + 1) +
+            "-" +
+            pad(d.getDate());
+          const time =
+            pad(d.getHours()) +
+            ":" +
+            pad(d.getMinutes()) +
+            ":" +
+            pad(d.getSeconds());
+          if (clockEl) {
+            clockEl.textContent = date + " " + time;
+          }
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+      });
+    </script>
+
+    <!-- PyScript: pymarc .mrk → .mrc -->
+    <script type="py">
 from js import Blob, document, URL
+from pymarc import MARCMakerReader
+import io
 
 def make_mrc(event=None):
-    text = document.getElementById("mrk").value
+    textarea = document.getElementById("mrk-input")
+    log = document.getElementById("log")
+    text = textarea.value if textarea is not None else ""
+
     if not text.strip():
+        if log is not None:
+            log.innerText = ">> No input detected in buffer."
         return
-    reader = MARCMakerReader(text)
-    data = b"".join(rec.as_marc() for rec in reader)
-    blob = Blob.new([data], {"type": "application/marc"})
+
+    try:
+        reader = MARCMakerReader(io.StringIO(text))
+        data = b"".join(rec.as_marc() for rec in reader)
+        if not data:
+            if log is not None:
+                log.innerText = ">> Parser ran but produced zero records. Check .mrk formatting."
+            return
+    except Exception as e:
+        if log is not None:
+            log.innerText = f">> Error while parsing MARC: {e}"
+        return
+
+    blob = Blob.new([data], {"type": "application/octet-stream"})
     url = URL.createObjectURL(blob)
-    link = document.createElement("a")
-    link.href = url
-    link.download = "records.mrc"
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    a = document.createElement("a")
+    a.href = url
+    a.download = "records.mrc"
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
     URL.revokeObjectURL(url)
 
-document.getElementById("go").addEventListener("click", make_mrc)
-    </py-script>
+    if log is not None:
+        log.innerText = ">> Build complete. Download initiated: records.mrc"
+
+btn = document.getElementById("convert-btn")
+if btn is not None:
+    btn.addEventListener("click", make_mrc)
+    </script>
   </body>
 </html>
