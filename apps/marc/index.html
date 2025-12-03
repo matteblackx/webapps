@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>MARC .mrk → .mrc</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+
+    <py-config>
+packages = ["pymarc"]
+    </py-config>
+  </head>
+  <body>
+    <h3>MARC .mrk → .mrc</h3>
+    <textarea id="mrk" rows="15" cols="80"
+      placeholder="Paste MARC .mrk / MARCMaker text here"></textarea><br>
+    <button id="go">Download .mrc</button>
+
+    <py-script>
+from pymarc import MARCMakerReader
+from js import Blob, document, URL
+
+def make_mrc(event=None):
+    text = document.getElementById("mrk").value
+    if not text.strip():
+        return
+    reader = MARCMakerReader(text)
+    data = b"".join(rec.as_marc() for rec in reader)
+    blob = Blob.new([data], {"type": "application/marc"})
+    url = URL.createObjectURL(blob)
+    link = document.createElement("a")
+    link.href = url
+    link.download = "records.mrc"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+
+document.getElementById("go").addEventListener("click", make_mrc)
+    </py-script>
+  </body>
+</html>
