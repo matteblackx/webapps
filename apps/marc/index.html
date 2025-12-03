@@ -440,49 +440,36 @@
       });
     </script>
 
-    <!-- PyScript: echo + logging -->
-    <script type="py">
-from pyscript import document
+   <py-config>
+{
+  "packages": ["pymarc"]
+}
+</py-config>
 
-def log(message: str) -> None:
-    """Append a line to the log textarea."""
-    log_box = document.querySelector("#log-box")
+<script type="py">
+from pyscript import document
+import traceback
+
+log_box = document.querySelector("#log-box")
+
+def log(msg: str) -> None:
     if log_box is None:
         return
     current = log_box.value or ""
-    if current:
-        log_box.value = current + "\n" + message
-    else:
-        log_box.value = message
+    log_box.value = (current + "\n" + msg).lstrip()
 
-def copy_text(event=None) -> None:
-    """Read input-box, write to output-box, log the result."""
+try:
+    import pymarc
+    log(">> pymarc import OK.")
     try:
-        inp = document.querySelector("#input-box")
-        out = document.querySelector("#output-box")
-        if inp is None or out is None:
-            log(">> ERROR: input or output element not found.")
-            return
+        log(f">> pymarc version: {pymarc.__version__}")
+    except Exception:
+        log(">> pymarc version: <unknown>")
+except Exception as e:
+    log(">> ERROR importing pymarc:")
+    log(str(e))
+    log(traceback.format_exc())
+</script>
 
-        text = inp.value or ""
-        out.value = text
-        log(f">> OK: Copied {len(text)} characters from INPUT to OUTPUT.")
-    except Exception as e:
-        log(f">> PYTHON ERROR in copy_text: {e!r}")
-
-def clear_all(event=None) -> None:
-    """Clear input, output, and log areas."""
-    try:
-        for sel in ("#input-box", "#output-box", "#log-box"):
-            el = document.querySelector(sel)
-            if el is not None:
-                el.value = ""
-        log(">> State cleared.")
-    except Exception as e:
-        log(f">> PYTHON ERROR in clear_all: {e!r}")
-
-# Initial log line so you can see PyScript actually ran.
-log(">> PyScript ready. Type in INPUT, then click RUN // COPY VIA PYTHON.")
-    </script>
   </body>
 </html>
