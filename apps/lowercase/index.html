@@ -1,211 +1,168 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lowercase Converter</title>
-
-  <!-- CRT theme fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
-
-  <!-- Lucide icons (for theme toggle icon, optional) -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Retro CRT theme stylesheet you generated earlier -->
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lowercase Converter</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="../../assets/global.css">
 </head>
-<body>
-  <!-- CRT overlays -->
-  <div class="scanlines"></div>
-  <div class="flicker"></div>
+<body class="min-h-screen p-4 md:p-8">
 
-  <div class="outer-container">
-    <!-- Header that uses the theme's layout classes -->
-    <header class="app-header">
-      <div class="app-header-left">
-        <div class="app-header-title glow-text">
-          LOWERCASE CONVERTER
-        </div>
-        <div class="app-header-subtitle terminal-text">
-          USER / ACCESS LOWERCASE
-        </div>
-      </div>
+    <!-- CRT Effects (Required) -->
+    <div class="scanlines"></div>
+    <div class="flicker"></div>
 
-      <div class="app-header-right">
-        <button id="themeToggle" type="button" class="retro-btn theme-toggle-btn">
-          <i data-lucide="monitor"></i>
-          <span>Theme</span>
-        </button>
-        <span id="clock" class="status-clock glow-text">00:00:00</span>
-        <span id="uptime" class="status-uptime">UPTIME 00:00:00</span>
-      </div>
-    </header>
-
-    <!-- Main grid using the bento layout from the theme -->
-    <main id="grid-container">
-      <!-- Single terminal card for the tool -->
-      <section class="terminal-card">
-        <div class="terminal-card-header">
-          <div class="terminal-icon-box">
-            <i data-lucide="type"></i>
-          </div>
-          <span class="status-badge">[ ACTIVE ]</span>
-        </div>
-
-        <div class="terminal-card-body">
-          <div class="terminal-card-title glow-text">
-            <span class="terminal-card-title-prefix">&gt;</span>
-            <span>Lowercase</span>
-          </div>
-          <p class="terminal-card-description">
-            Instant conversion of any text to lowercase. Paste or type your text in the input field and the output updates live.
-          </p>
-
-          <!-- Form content inside the card -->
-          <div style="margin-top:0.5rem; display:flex; flex-direction:column; gap:0.75rem;">
+    <!-- Main App Container -->
+    <div class="max-w-4xl mx-auto relative z-10">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-end mb-8 border-b pb-4" style="border-color: rgba(var(--rgb-dim), 0.5);">
             <div>
-              <label for="input" class="badge-muted">INPUT</label>
-              <textarea
-                id="input"
-                placeholder="Paste or type text here..."
-                class="terminal-text"
-                style="
-                  width:100%;
-                  min-height:120px;
-                  background: rgba(5,5,8,0.8);
-                  color: inherit;
-                  border-radius: 6px;
-                  border: 1px solid rgba(var(--rgb-dim),0.8);
-                  padding: 0.6rem 0.7rem;
-                  font-family: var(--font-desc);
-                  font-size: 0.9rem;
-                  resize: vertical;
-                "
-              ></textarea>
+                <h1 class="text-2xl md:text-4xl font-bold glow-text tracking-wider">LOWERCASE_CONVERTER</h1>
+                <p class="text-sm opacity-70 mt-2">USER: ADMIN // ACCESS_LEVEL: 01</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <button id="themeToggle" class="retro-btn px-3 py-1 text-xs uppercase tracking-widest rounded-sm flex items-center gap-2">
+                    <i data-lucide="monitor" class="w-3 h-3"></i> [THEME]
+                </button>
+                <div class="text-right hidden md:block mt-2">
+                    <div id="clock" class="text-xl glow-text">00:00:00</div>
+                    <div class="text-xs" style="color: rgba(var(--rgb-dim), 1);">UPTIME: 99.9%</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Tool Card -->
+        <div class="terminal-card p-6 relative rounded-sm">
+            <!-- Decorative Corners -->
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+
+            <!-- Card Header -->
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 border rounded bg-black/20" style="border-color: rgba(var(--rgb-dim), 1);">
+                        <i data-lucide="type" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold glow-text">> INPUT_STREAM</h2>
+                        <span class="text-xs tracking-widest opacity-70">[ STATUS: LISTENING ]</span>
+                    </div>
+                </div>
+                <!-- Background Number Decoration -->
+                <div class="text-5xl font-bold opacity-10 select-none font-vt323" style="color: rgba(var(--rgb-dim), 1);">01</div>
             </div>
 
-            <div>
-              <label for="output" class="badge-muted">OUTPUT</label>
-              <textarea
-                id="output"
-                readonly
-                placeholder="Lowercase text will appear here..."
-                class="terminal-text"
-                style="
-                  width:100%;
-                  min-height:120px;
-                  background: rgba(5,5,8,0.8);
-                  color: inherit;
-                  border-radius: 6px;
-                  border: 1px solid rgba(var(--rgb-dim),0.8);
-                  padding: 0.6rem 0.7rem;
-                  font-family: var(--font-desc);
-                  font-size: 0.9rem;
-                  resize: vertical;
-                "
-              ></textarea>
-            </div>
+            <!-- Input Area -->
+            <div class="space-y-6">
+                <div>
+                    <label for="input" class="block text-xs tracking-widest mb-2 opacity-70">RAW_DATA_INPUT</label>
+                    <textarea 
+                        id="input" 
+                        placeholder="PASTE_TEXT_HERE..." 
+                        class="retro-input w-full h-32 p-4 text-lg font-vt323 rounded-sm resize-none bg-black/30 focus:ring-0"
+                    ></textarea>
+                </div>
 
-            <div style="display:flex; justify-content:flex-end;">
-              <button id="copyBtn" type="button" class="retro-btn">
-                Copy to Clipboard
-              </button>
+                <div class="flex justify-center">
+                    <i data-lucide="arrow-down" class="w-6 h-6 animate-bounce opacity-50"></i>
+                </div>
+
+                <div>
+                    <label for="output" class="block text-xs tracking-widest mb-2 opacity-70">PROCESSED_OUTPUT</label>
+                    <textarea 
+                        id="output" 
+                        readonly 
+                        placeholder="WAITING_FOR_DATA..." 
+                        class="retro-input w-full h-32 p-4 text-lg font-vt323 rounded-sm resize-none bg-black/50"
+                    ></textarea>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t" style="border-color: rgba(var(--rgb-dim), 0.3);">
+                    <button id="copyBtn" class="retro-btn px-6 py-2 flex items-center gap-2 font-bold">
+                        <i data-lucide="clipboard-copy" class="w-4 h-4"></i> COPY_TO_CLIPBOARD
+                    </button>
+                </div>
             </div>
-          </div>
         </div>
 
-        <!-- Large background number decoration -->
-        <div class="terminal-card-bg-number">01</div>
-      </section>
-    </main>
+        <!-- Terminal Footer -->
+        <footer class="mt-12 text-center text-xs opacity-50 font-mono">
+            <span class="animate-pulse">_</span> END OF LINE
+        </footer>
+    </div>
 
-    <!-- Footer using theme classes -->
-    <footer class="app-footer">
-      <span class="app-footer-underscore">END OF LINE</span>
-    </footer>
-  </div>
+    <!-- App Logic -->
+    <script>
+        // 1. Lowercase Logic
+        (function () {
+            const input = document.getElementById('input');
+            const output = document.getElementById('output');
+            const copyBtn = document.getElementById('copyBtn');
 
-  <script>
-    // Lowercase converter logic
-    (function () {
-      const input = document.getElementById('input');
-      const output = document.getElementById('output');
-      const copyBtn = document.getElementById('copyBtn');
+            function convert() {
+                const val = input.value || '';
+                output.value = val.toLowerCase();
+            }
 
-      function render() {
-        output.value = (input.value || '').toLowerCase();
-      }
+            input.addEventListener('input', convert);
+            input.addEventListener('paste', () => requestAnimationFrame(convert));
 
-      input.addEventListener('input', render);
-      input.addEventListener('paste', () => { requestAnimationFrame(render); });
+            copyBtn.addEventListener('click', async () => {
+                if (!output.value) return;
+                try {
+                    await navigator.clipboard.writeText(output.value);
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> COPIED!';
+                    lucide.createIcons(); // Re-init icon for the checkmark
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                        lucide.createIcons();
+                    }, 2000);
+                } catch (err) {
+                    console.error('Clipboard Error:', err);
+                }
+            });
+        })();
 
-      copyBtn.addEventListener('click', async () => {
-        if (!output.value) return;
+        // 2. Clock Logic
+        (function () {
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+                const clockEl = document.getElementById('clock');
+                if(clockEl) clockEl.innerText = timeString;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+        })();
 
-        try {
-          await navigator.clipboard.writeText(output.value);
-          const originalText = copyBtn.textContent;
-          copyBtn.textContent = 'Copied!';
-          copyBtn.classList.add('success');
+        // 3. Theme Toggle
+        (function () {
+            const btn = document.getElementById('themeToggle');
+            if(btn) {
+                btn.addEventListener('click', () => {
+                    document.body.classList.toggle('theme-green');
+                });
+            }
+        })();
 
-          setTimeout(() => {
-            copyBtn.textContent = originalText;
-            copyBtn.classList.remove('success');
-          }, 2000);
-        } catch (err) {
-          console.error('Failed to copy:', err);
-          alert('Failed to copy to clipboard.');
-        }
-      });
-
-      render();
-    })();
-
-    // Theme toggle (adds/removes .theme-green on <body>)
-    (function () {
-      const btn = document.getElementById('themeToggle');
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        document.body.classList.toggle('theme-green');
-      });
-    })();
-
-    // Clock and uptime display to fit the theme
-    (function () {
-      const start = Date.now();
-      const clockEl = document.getElementById('clock');
-      const uptimeEl = document.getElementById('uptime');
-
-      function pad(n) {
-        return String(n).padStart(2, '0');
-      }
-
-      function tick() {
-        const now = new Date();
-        const h = pad(now.getHours());
-        const m = pad(now.getMinutes());
-        const s = pad(now.getSeconds());
-        if (clockEl) clockEl.textContent = `${h}:${m}:${s}`;
-
-        const diff = Math.floor((Date.now() - start) / 1000);
-        const uh = pad(Math.floor(diff / 3600));
-        const um = pad(Math.floor((diff % 3600) / 60));
-        const us = pad(diff % 60);
-        if (uptimeEl) uptimeEl.textContent = `UPTIME ${uh}:${um}:${us}`;
-      }
-
-      tick();
-      setInterval(tick, 1000);
-    })();
-
-    // Initialize Lucide icons once DOM is ready
-    document.addEventListener('DOMContentLoaded', function () {
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-      }
-    });
-  </script>
+        // 4. Icon Initialization
+        lucide.createIcons();
+    </script>
 </body>
 </html>
