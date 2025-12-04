@@ -2,31 +2,20 @@
    RETRO TERMINAL DESIGN SYSTEM
    ========================================= */
 
-/* 1. COLOR VARIABLES */
+/* 1. COLOR VARIABLES & DEFAULTS */
 :root {
-    /* DEFAULT: P3 AMBER PHOSPHOR
-       Hex: #FFB000 (Standard Amber)
-       RGB: 255, 176, 0
-    */
-    --rgb-main: 255, 176, 0;
-    --rgb-dim: 143, 90, 0;
-    --hex-bg: #0a0500; /* Deep Amber-Black */
     --font-stack: 'Share Tech Mono', monospace;
 }
 
-/* MATRIX GREEN THEME OVERRIDE */
-body.theme-green {
-    /* MATRIX GREEN (Spring Green)
-       Hex: #00FF66
-       RGB: 0, 255, 102
-    */
-    --rgb-main: 0, 255, 102; 
-    --rgb-dim: 0, 143, 30;
-    --hex-bg: #020a05;
-}
-
-/* 2. BASE STYLES */
 body {
+    /* DEFAULT THEME: P3 AMBER PHOSPHOR
+       We define these directly on body to ensure they are the default.
+       Hex: #FFB000 (Standard Amber)
+    */
+    --rgb-main: 255, 176, 0;
+    --rgb-dim: 160, 100, 0; /* Slightly brighter than before for visibility */
+    --hex-bg: #0a0500;      /* Deep Amber-Black */
+
     background-color: var(--hex-bg);
     color: rgb(var(--rgb-main));
     font-family: var(--font-stack);
@@ -34,7 +23,18 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* 3. CRT SCREEN EFFECTS */
+/* MATRIX GREEN THEME OVERRIDE */
+/* Only activates if <body class="theme-green"> is present */
+body.theme-green {
+    /* MATRIX GREEN (Spring Green)
+       Hex: #00FF66
+    */
+    --rgb-main: 0, 255, 102; 
+    --rgb-dim: 0, 143, 30;
+    --hex-bg: #020a05;
+}
+
+/* 2. CRT SCREEN EFFECTS */
 .scanlines {
     position: fixed;
     top: 0;
@@ -61,6 +61,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    /* Uses the current main color for the tint */
     background: rgba(var(--rgb-main), 0.02);
     z-index: 9998;
 }
@@ -74,7 +75,7 @@ body {
     100% { opacity: 0.96; }
 }
 
-/* 4. UTILITIES */
+/* 3. UTILITIES */
 .glow-text {
     text-shadow: 0 0 5px rgba(var(--rgb-main), 0.5), 0 0 10px rgba(var(--rgb-main), 0.3);
 }
@@ -83,7 +84,7 @@ body {
     font-family: 'VT323', monospace;
 }
 
-/* 5. COMPONENTS */
+/* 4. COMPONENTS */
 
 /* Retro Panel/Card Container */
 .terminal-card, .retro-container {
@@ -114,7 +115,8 @@ body {
 
 /* Retro Inputs */
 .retro-input {
-    background: rgba(0,0,0,0.3);
+    /* Standard RGB syntax for compatibility */
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(var(--rgb-dim), 0.5);
     color: rgb(var(--rgb-main));
     font-family: var(--font-stack);
@@ -124,7 +126,13 @@ body {
 
 .retro-input:focus {
     border-color: rgb(var(--rgb-main));
-    box-shadow: 0 0 10px rgba(var(--rgb-main), 0.2);
+    box-shadow: 0 0 10px rgba(var(--rgb-main), 0.4);
+}
+
+/* Placeholder Text styling */
+.retro-input::placeholder {
+    color: rgba(var(--rgb-main), 0.4);
+    opacity: 1; /* Ensures color is applied fully */
 }
 
 /* Decorative Corners (Requires relative parent) */
@@ -147,3 +155,9 @@ body {
 ::-webkit-scrollbar-track { background: #000; }
 ::-webkit-scrollbar-thumb { background: rgba(var(--rgb-dim), 1); }
 ::-webkit-scrollbar-thumb:hover { background: rgb(var(--rgb-main)); }
+
+/* Selection Highlight */
+::selection {
+    background: rgba(var(--rgb-main), 0.3);
+    color: #fff;
+}
