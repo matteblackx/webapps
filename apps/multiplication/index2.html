@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Times Tables // Practice</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Local Styles -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Local overrides for specific game layout */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .answer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Active state for retro buttons using theme vars */
+        .retro-btn.active {
+            background-color: rgb(var(--rgb-main));
+            color: var(--hex-bg);
+            border-color: rgb(var(--rgb-main));
+            box-shadow: 0 0 15px rgba(var(--rgb-main), 0.5);
+            font-weight: bold;
+        }
+
+        /* Wrong answer state (Red override) */
+        .retro-btn.wrong {
+            border-color: #ff3333;
+            color: #ff3333;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <!-- CRT Effects -->
+    <div class="scanlines"></div>
+    <div class="flicker"></div>
+
+    <!-- Main App Container -->
+    <div class="max-w-3xl mx-auto relative z-10">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-end mb-8 border-b pb-4" style="border-color: rgba(var(--rgb-dim), 0.5);">
+            <div>
+                <h1 class="text-2xl md:text-4xl font-bold glow-text tracking-wider">TIMES_TABLES</h1>
+                <p class="text-sm opacity-70 mt-2">USER: ADMIN // MODE: PRACTICE</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <button id="themeToggle" class="retro-btn px-3 py-1 text-xs uppercase tracking-widest rounded-sm flex items-center gap-2">
+                    <i data-lucide="monitor" class="w-3 h-3"></i> [THEME]
+                </button>
+                <div class="text-right hidden md:block mt-2">
+                    <div id="clock" class="text-xl glow-text">00:00:00</div>
+                    <div class="text-xs" style="color: rgba(var(--rgb-dim), 1);">UPTIME: 99.9%</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Card -->
+        <div class="terminal-card p-6 relative rounded-sm">
+            <!-- Decorative Corners -->
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+
+            <!-- Configuration Section -->
+            <div class="mb-8">
+                <div class="flex items-center gap-2 mb-3 opacity-70">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span class="text-xs tracking-widest">FOCUS_PARAMETERS</span>
+                </div>
+                
+                <div id="filters" class="space-y-2">
+                    <div class="filter-grid" id="numRow1"></div>
+                    <div class="filter-grid" id="numRow2"></div>
+                    <button id="allBtn" class="retro-btn w-full py-2 text-sm mt-2 tracking-widest">SELECT_ALL_REGISTERS</button>
+                </div>
+            </div>
+
+            <!-- Border Separator -->
+            <div class="h-px w-full mb-8 opacity-30" style="background-color: rgb(var(--rgb-main));"></div>
+
+            <!-- Problem Display -->
+            <div class="text-center mb-8 relative">
+                <div class="absolute top-0 right-0 text-xs opacity-50 font-mono tracking-widest">
+                    [ CALCULATION_REQUIRED ]
+                </div>
+                
+                <div id="problem" class="py-8">
+                    <div id="prompt" class="text-6xl md:text-8xl font-vt323 glow-text tracking-wider">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Answers Grid -->
+            <div id="answers" class="answer-grid">
+                <!-- Buttons injected via JS -->
+            </div>
+            
+        </div>
+
+        <!-- Terminal Footer -->
+        <footer class="mt-12 text-center text-xs opacity-50 font-mono">
+            <span class="animate-pulse">_</span> END OF LINE
+        </footer>
+    </div>
+
+    <!-- App Logic -->
+    <script>
+        // 1. Game Logic
+        (function() {
+            // Range configuration
+            const MIN = 0, MAX = 12;
+
+            // Elements
+            const promptEl  = document.getElementById('prompt');
+            const answersEl = document.getElementById('answers');
+            const numRow1   = document.getElementById('numRow1');
+            const numRow2   = document.getElementById('numRow2');
+            const allBtn    = document.getElementById('allBtn');
+
+            // State
+            let current = { a: 0, b: 0, product: 0 };
+            const ALL_NUMS = Array.from({length: MAX - MIN + 1}, (_, i) => i + MIN);
+            const selected = new Set(ALL_NUMS);
+
+            // Utilities
+            const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            const sample = arr => arr[Math.floor(Math.random() * arr.length)];
+            
+            function shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            // Build UI
+            function buildNumberToggles() {
+                numRow1.innerHTML = '';
+                numRow2.innerHTML = '';
+                const firstRow = ALL_NUMS.slice(0, 7);   // 0..6
+                const secondRow = ALL_NUMS.slice(7);     // 7..12
+
+                const makeBtn = (n) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    // Use retro-btn class and active state
+                    btn.className = 'retro-btn w-full py-2 font-vt323 text-xl active'; 
+                    btn.textContent = String(n);
+                    btn.dataset.n = String(n);
+                    btn.addEventListener('click', () => toggleNumber(n));
+                    return btn;
+                };
+
+                firstRow.forEach(n => numRow1.appendChild(makeBtn(n)));
+                secondRow.forEach(n => numRow2.appendChild(makeBtn(n)));
+                allBtn.addEventListener('click', selectAll);
+                updateAllIndicator();
+            }
+
+            function updateAllIndicator() {
+                const isAll = selected.size === ALL_NUMS.length;
+                if(isAll) allBtn.classList.add('active');
+                else allBtn.classList.remove('active');
+            }
+
+            function updateNumberButtonUI(n, on) {
+                const btn = document.querySelector(`button[data-n="${n}"]`);
+                if (!btn) return;
+                if(on) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+
+            function selectAll() {
+                ALL_NUMS.forEach(n => selected.add(n));
+                document.querySelectorAll('button[data-n]').forEach(b => {
+                    b.classList.add('active');
+                });
+                updateAllIndicator();
+                next(true);
+            }
+
+            function toggleNumber(n) {
+                if (selected.has(n)) {
+                    if (selected.size === 1) return; // Must have at least one
+                    selected.delete(n);
+                    updateNumberButtonUI(n, false);
+                } else {
+                    selected.add(n);
+                    updateNumberButtonUI(n, true);
+                }
+                updateAllIndicator();
+                next(true);
+            }
+
+            function pickProblemFocused() {
+                const s = sample([...selected]);
+                const placeOnA = Math.random() < 0.5;
+                const other = randInt(MIN, MAX);
+                const a = placeOnA ? s : other;
+                const b = placeOnA ? other : s;
+                return { a, b, product: a * b };
+            }
+
+            function generateWrongAnswers(correct) {
+                const wrongs = new Set();
+                const tweaks = [-10, -5, -2, -1, 1, 2, 5, 10];
+                let tries = 0;
+                while (wrongs.size < 3 && tries < 100) {
+                    tries++;
+                    let candidate;
+                    // Strategy 1: slight offset
+                    if (Math.random() < 0.6) {
+                        const t = tweaks[randInt(0, tweaks.length - 1)];
+                        candidate = correct + t;
+                    } 
+                    // Strategy 2: close factor
+                    else {
+                        const nearA = Math.max(MIN, Math.min(MAX, current.a + (Math.random() < 0.5 ? -1 : 1)));
+                        const nearB = Math.max(MIN, Math.min(MAX, current.b + (Math.random() < 0.5 ? -1 : 1)));
+                        candidate = Math.random() < 0.5 ? nearA * current.b : current.a * nearB;
+                    }
+                    if (candidate !== correct && candidate >= 0) wrongs.add(candidate);
+                }
+                // Fallback
+                while (wrongs.size < 3) {
+                    const x = randInt(MIN, MAX) * randInt(MIN, MAX);
+                    if (x !== correct) wrongs.add(x);
+                }
+                return [...wrongs].slice(0, 3);
+            }
+
+            function renderAnswers(options, correct) {
+                answersEl.innerHTML = '';
+                options.forEach(val => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'retro-btn h-20 text-3xl font-vt323 transition-transform hover:-translate-y-1';
+                    btn.textContent = String(val);
+                    
+                    btn.addEventListener('click', () => {
+                        if (val === correct) {
+                            next();
+                        } else {
+                            btn.classList.add('wrong');
+                            btn.disabled = true;
+                        }
+                    });
+                    answersEl.appendChild(btn);
+                });
+            }
+
+            function next(force = false) {
+                current = pickProblemFocused();
+                promptEl.textContent = `${current.a} × ${current.b}`;
+                const correct = current.product;
+                const wrongs = generateWrongAnswers(correct);
+                const options = shuffle([correct, ...wrongs]);
+                renderAnswers(options, correct);
+            }
+
+            // Init
+            buildNumberToggles();
+            next();
+        })();
+
+        // 2. Clock Logic
+        (function () {
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+                const clockEl = document.getElementById('clock');
+                if(clockEl) clockEl.innerText = timeString;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+        })();
+
+        // 3. Theme Toggle
+        (function () {
+            const btn = document.getElementById('themeToggle');
+            if(btn) {
+                btn.addEventListener('click', () => {
+                    document.body.classList.toggle('theme-green');
+                });
+            }
+        })();
+
+        // 4. Icon Initialization
+        lucide.createIcons();
+    </script>
+</body>
+</html>
