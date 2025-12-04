@@ -7,6 +7,11 @@
     --font-stack: 'Share Tech Mono', monospace;
 }
 
+/* SCALING: Global 20% reduction */
+html {
+    font-size: 80%;
+}
+
 body {
     /* DEFAULT THEME: P3 AMBER PHOSPHOR
        We define these directly on body to ensure they are the default.
