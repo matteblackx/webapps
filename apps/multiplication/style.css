@@ -1,1 +1,163 @@
+/* =========================================
+   RETRO TERMINAL DESIGN SYSTEM
+   ========================================= */
 
+/* 1. COLOR VARIABLES & DEFAULTS */
+:root {
+    --font-stack: 'Share Tech Mono', monospace;
+}
+
+body {
+    /* DEFAULT THEME: P3 AMBER PHOSPHOR
+       We define these directly on body to ensure they are the default.
+       Hex: #FFB000 (Standard Amber)
+    */
+    --rgb-main: 255, 176, 0;
+    --rgb-dim: 160, 100, 0; /* Slightly brighter than before for visibility */
+    --hex-bg: #0a0500;      /* Deep Amber-Black */
+
+    background-color: var(--hex-bg);
+    color: rgb(var(--rgb-main));
+    font-family: var(--font-stack);
+    overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* MATRIX GREEN THEME OVERRIDE */
+/* Only activates if <body class="theme-green"> is present */
+body.theme-green {
+    /* MATRIX GREEN (Spring Green)
+       Hex: #00FF66
+    */
+    --rgb-main: 0, 255, 102; 
+    --rgb-dim: 0, 143, 30;
+    --hex-bg: #020a05;
+}
+
+/* 2. CRT SCREEN EFFECTS */
+.scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0,0,0,0.2) 50%,
+        rgba(0,0,0,0.2)
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.flicker {
+    animation: flicker 0.15s infinite;
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Uses the current main color for the tint */
+    background: rgba(var(--rgb-main), 0.02);
+    z-index: 9998;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.97; }
+    5% { opacity: 0.95; }
+    10% { opacity: 0.9; }
+    15% { opacity: 0.95; }
+    20% { opacity: 0.99; }
+    100% { opacity: 0.96; }
+}
+
+/* 3. UTILITIES */
+.glow-text {
+    text-shadow: 0 0 5px rgba(var(--rgb-main), 0.5), 0 0 10px rgba(var(--rgb-main), 0.3);
+}
+
+.font-vt323 {
+    font-family: 'VT323', monospace;
+}
+
+/* 4. COMPONENTS */
+
+/* Retro Panel/Card Container */
+.terminal-card, .retro-container {
+    background: rgba(var(--rgb-dim), 0.1); 
+    border: 1px solid rgba(var(--rgb-dim), 0.5);
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+/* Retro Buttons */
+.retro-btn {
+    background: transparent;
+    border: 1px solid rgba(var(--rgb-dim), 1);
+    color: rgba(var(--rgb-dim), 1);
+    font-family: var(--font-stack);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.retro-btn:hover {
+    color: rgb(var(--rgb-main));
+    border-color: rgb(var(--rgb-main));
+    box-shadow: 0 0 8px rgba(var(--rgb-main), 0.4);
+    text-shadow: 0 0 4px rgba(var(--rgb-main), 0.8);
+}
+
+/* Retro Inputs */
+.retro-input {
+    /* Standard RGB syntax for compatibility */
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(var(--rgb-dim), 0.5);
+    color: rgb(var(--rgb-main));
+    font-family: var(--font-stack);
+    outline: none;
+    transition: all 0.2s;
+}
+
+.retro-input:focus {
+    border-color: rgb(var(--rgb-main));
+    box-shadow: 0 0 10px rgba(var(--rgb-main), 0.4);
+}
+
+/* Placeholder Text styling */
+.retro-input::placeholder {
+    color: rgba(var(--rgb-main), 0.4);
+    opacity: 1; /* Ensures color is applied fully */
+}
+
+/* Decorative Corners (Requires relative parent) */
+.corner {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: rgb(var(--rgb-main));
+    border-style: solid;
+    transition: all 0.3s;
+    opacity: 0.5;
+}
+.top-left { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.top-right { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.bottom-left { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.bottom-right { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: rgba(var(--rgb-dim), 1); }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--rgb-main)); }
+
+/* Selection Highlight */
+::selection {
+    background: rgba(var(--rgb-main), 0.3);
+    color: #fff;
+}
